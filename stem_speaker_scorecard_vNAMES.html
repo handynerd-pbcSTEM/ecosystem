@@ -1,0 +1,380 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PBC STEM Speaker Scoring</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #111827;
+    --ink: #e5e7eb;
+    --muted: #9ca3af;
+    --accent: #22d3ee;
+    --ok: #10b981;
+    --warn: #f59e0b;
+    --err: #ef4444;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: radial-gradient(1200px 800px at 50% -10%, #172554, var(--bg));
+    color: var(--ink);
+    line-height: 1.35;
+  }
+  header {
+    padding: 16px 20px; position: sticky; top: 0; backdrop-filter: saturate(150%) blur(8px);
+    background: rgba(15,23,42,0.8); border-bottom: 1px solid rgba(255,255,255,0.06);
+    z-index: 10;
+  }
+  header h1 { margin: 0; font-size: 18px; letter-spacing: .3px; }
+  header small { color: var(--muted); }
+  main { padding: 20px; max-width: 840px; margin: 0 auto; }
+  .card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px; padding: 16px; margin-bottom: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  }
+  h2 { font-size: 18px; margin: 8px 0 12px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 720px) { .row { grid-template-columns: 1fr; } }
+  label { display: block; font-weight: 600; margin: 8px 0 8px; }
+  .scale { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; }
+  .scale input { display: none; }
+  .pill {
+    display: inline-block; width: 100%; padding: 10px 6px; text-align: center; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.2); color: var(--ink); cursor: pointer;
+    user-select: none;
+  }
+  .scale input:checked + .pill { background: var(--accent); color: #001018; border-color: transparent; font-weight: 800; }
+  .helper { color: var(--muted); font-size: 12px; margin-top: 6px; }
+  .student-select { width: 100%; padding: 10px; border-radius: 10px; background: #0b1220; color: var(--ink); border: 1px solid rgba(255,255,255,0.12); }
+  .draglist { list-style: none; margin: 12px 0 0; padding: 0; }
+  .draglist li {
+    border: 1px solid rgba(255,255,255,0.18); background: #0b1220; color: var(--ink);
+    padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px;
+  }
+  .drag-handle { cursor: grab; font-size: 18px; color: var(--muted); }
+  .muted { color: var(--muted); }
+  .cta {
+    width: 100%; padding: 14px 16px; border-radius: 12px; border: none; cursor: pointer;
+    background: linear-gradient(90deg, var(--accent), #60a5fa); color: #03101a; font-weight: 800; font-size: 16px;
+    box-shadow: 0 10px 24px rgba(34,211,238,0.25);
+  }
+  .cta:disabled { opacity: .6; filter: grayscale(100%); cursor: not-allowed; }
+  .footer-note { font-size: 12px; color: var(--muted); text-align: center; margin-top: 8px; }
+  .tag { font-size: 11px; color: #03101a; background: var(--accent); border-radius: 999px; padding: 2px 8px; font-weight: 700; }
+  .inline { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .toast {
+    position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px;
+    background: #052e2b; color: #d1fae5; border: 1px solid #0f766e;
+    padding: 10px 12px; border-radius: 10px; display: none; z-index: 20;
+  }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+  .totals { font-weight: 800; }
+  .divider { height: 1px; background: rgba(255,255,255,0.08); margin: 12px 0; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>PBC STEM Speaker Scoring <small>· Audience Judge</small></h1>
+    <small class="muted">Round 1: score 5 skills for each speaker, then force‑rank all 10.</small>
+  </header>
+  <main>
+    <section class="card" id="who">
+      <h2>1) Select the current speaker</h2>
+      <p class="helper">Pick the student at the microphone. You'll score five skills on a 1‑5 scale (anchored below).</p>
+      <select class="student-select" id="studentSelect" aria-label="Select speaker">
+        <option value="">— Choose a student —</option>
+      </select>
+      <div class="helper">
+        <span class="inline">
+          <span class="tag">Anchors</span>
+          <span>1 = Needs development</span> ·
+          <span>3 = Proficient</span> ·
+          <span>5 = Exceptional</span>
+        </span>
+      </div>
+    </section>
+
+    <section class="card" id="rubric">
+      <h2>2) Score the 5 skills</h2>
+
+      <div id="skills"></div>
+
+      <div class="divider"></div>
+      <div class="grid">
+        <div><span class="muted">Subtotal for this speaker:</span> <span id="subtotal" class="totals">0</span>/25</div>
+        <div><span class="muted">Your completed speaker scores:</span> <span id="doneCount" class="totals">0</span>/10</div>
+      </div>
+      <div class="helper">Scores auto‑save on your phone. You can adjust anytime before submitting.</div>
+    </section>
+
+    <section class="card" id="rank">
+      <h2>3) Force‑rank all 10 speakers</h2>
+      <p class="helper">Drag to order from <strong>#1 (top)</strong> to <strong>#10</strong>. Use your own judgment after hearing all talks.</p>
+      <ol class="draglist" id="rankList" aria-label="Drag to rank speakers"></ol>
+      <button class="cta" id="submitBtn" disabled>Submit my scores & ranking</button>
+      <div class="footer-note">Submitting generates a confirmation code; no personal data collected.</div>
+    </section>
+
+    <section class="card" id="review" hidden>
+      <h2>Submitted ✓</h2>
+      <p>Thanks for judging! Below is a snapshot of what was submitted from this device.</p>
+      <pre id="payload" style="white-space: pre-wrap; font-size: 12px; background:#0b1220; padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,.12);"></pre>
+      <div class="footer-note">Show this code to an usher if needed: <strong id="code"></strong></div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">Saved</div>
+
+<script>
+const skills = [
+  { id:"clarity", name:"Communication Clarity", anchors:["Hard to follow","Generally clear","Crystal clear & concise"] },
+  { id:"accuracy", name:"STEM Accuracy & Rigor", anchors:["Fact issues","Mostly correct","Accurate, precise, cites sources"] },
+  { id:"story", name:"Storytelling & Engagement", anchors:["Low engagement","Holds attention","Compelling narrative, audience energy"] },
+  { id:"insight", name:"Problem‑Solving & Insight", anchors:["Surface‑level","Solid reasoning","Original insight, strong synthesis"] },
+  { id:"presence", name:"Professionalism & Presence", anchors:["Unsteady","Confident","Polished, excellent timing"] }
+];
+
+const students = [
+  "Steve",
+  "Maya",
+  "Jordan",
+  "Alicia",
+  "Carlos",
+  "Priya",
+  "Noah",
+  "Sofia",
+  "Liam",
+  "Zara"
+];
+
+const select = document.getElementById('studentSelect');
+students.forEach(s=>{
+  const opt = document.createElement('option');
+  opt.value = s; opt.textContent = s;
+  select.appendChild(opt);
+});
+
+const skillsWrap = document.getElementById('skills');
+skills.forEach(skill => {
+  const sec = document.createElement('section');
+  sec.className = 'rubric-item';
+  sec.innerHTML = `
+    <label for="${skill.id}">${skill.name}</label>
+    <div class="scale" role="radiogroup" aria-label="${skill.name} scale">
+      ${[1,2,3,4,5].map(v=>`
+        <label>
+          <input type="radio" name="${skill.id}" value="${v}" aria-label="${skill.name} ${v}">
+          <span class="pill">${v}</span>
+        </label>
+      `).join('')}
+    </div>
+    <div class="helper"><span class="muted">1:</span> ${skill.anchors[0]} &nbsp;·&nbsp; <span class="muted">3:</span> ${skill.anchors[1]} &nbsp;·&nbsp; <span class="muted">5:</span> ${skill.anchors[2]}</div>
+  `;
+  skillsWrap.appendChild(sec);
+});
+
+const doneCount = document.getElementById('doneCount');
+const subtotal = document.getElementById('subtotal');
+const rankList = document.getElementById('rankList');
+const toast = document.getElementById('toast');
+const submitBtn = document.getElementById('submitBtn');
+const review = document.getElementById('review');
+const payloadPre = document.getElementById('payload');
+const codeEl = document.getElementById('code');
+
+// Local storage helpers
+const LS_KEY = 'pbc_stem_speaker_scores_v1';
+const LS_RANK = 'pbc_stem_rank_v1';
+
+function loadState() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch { return {}; }
+}
+function saveState(state) {
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
+  ping();
+}
+function loadRank() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(LS_RANK) || '[]');
+    // If nothing stored, or length/name mismatch, reset ranking
+    if (
+      !Array.isArray(stored) ||
+      stored.length !== students.length ||
+      stored.some(s => !students.includes(s))
+    ) {
+      return [];
+    }
+    return stored;
+  } catch {
+    return [];
+  }
+}
+
+function saveRank(arr) { localStorage.setItem(LS_RANK, JSON.stringify(arr)); }
+
+// Build rank list
+function buildRankList() {
+  rankList.innerHTML = '';
+  const current = loadRank();
+  const items = current.length ? current : students.slice();
+  items.forEach((s, idx) => {
+    const li = document.createElement('li');
+    li.draggable = true;
+    li.innerHTML = `<span class="drag-handle" aria-hidden="true">☰</span><strong>#${idx+1}</strong>&nbsp;&nbsp;<span>${s}</span>`;
+    li.dataset.student = s;
+    rankList.appendChild(li);
+  });
+  enableDnD();
+  saveRank(items);
+  updateSubmitState();
+}
+function enableDnD() {
+  let dragEl=null;
+  rankList.querySelectorAll('li').forEach(li=>{
+    li.addEventListener('dragstart', e=>{
+      dragEl = li; li.style.opacity=.5;
+      e.dataTransfer.effectAllowed='move';
+    });
+    li.addEventListener('dragend', ()=>{ dragEl=null; li.style.opacity=1; persistRank(); });
+    li.addEventListener('dragover', e=>{
+      e.preventDefault();
+      const after = getDragAfterElement(rankList, e.clientY);
+      if (after == null) rankList.appendChild(dragEl);
+      else rankList.insertBefore(dragEl, after);
+    });
+  });
+}
+function getDragAfterElement(container, y) {
+  const els = [...container.querySelectorAll('li:not(.dragging)')];
+  return els.reduce((closest, child)=>{
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height/2;
+    if (offset < 0 && offset > closest.offset) return { offset, element: child };
+    else return closest;
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+function persistRank() {
+  const arr = [...rankList.querySelectorAll('li')].map(li=>li.dataset.student);
+  saveRank(arr);
+  // Re-number
+  [...rankList.children].forEach((li,i)=>{
+    li.querySelector('strong').textContent = `#${i+1}`;
+  });
+  updateSubmitState();
+}
+
+// Subtotal and save
+function currentScores() {
+  const res = {};
+  skills.forEach(sk => {
+    const v = document.querySelector(`input[name="${sk.id}"]:checked`);
+    res[sk.id] = v ? Number(v.value) : null;
+  });
+  return res;
+}
+function updateSubtotal() {
+  const vals = Object.values(currentScores()).filter(v=>v!=null);
+  const sum = vals.reduce((a,b)=>a+b,0);
+  subtotal.textContent = sum;
+}
+function ping() {
+  toast.style.display = 'block';
+  setTimeout(()=> toast.style.display = 'none', 800);
+}
+
+skillsWrap.addEventListener('change', () => {
+  updateSubtotal();
+  const who = select.value;
+  if (!who) return;
+  const state = loadState();
+  state[who] = currentScores();
+  saveState(state);
+  updateDoneCount();
+  updateSubmitState();
+});
+
+select.addEventListener('change', () => {
+  // Load existing scores into UI
+  const state = loadState();
+  const vals = state[select.value] || {};
+  skills.forEach(sk => {
+    const v = vals[sk.id] || null;
+    const input = v ? document.querySelector(`input[name="${sk.id}"][value="${v}"]`) : null;
+    document.querySelectorAll(`input[name="${sk.id}"]`).forEach(el => el.checked = false);
+    if (input) input.checked = true;
+  });
+  updateSubtotal();
+});
+
+function updateDoneCount() {
+  const state = loadState();
+  const done = students.filter(s => {
+    const v = state[s];
+    if (!v) return false;
+    return skills.every(sk => v[sk.id] != null);
+  }).length;
+  doneCount.textContent = `${done}`;
+}
+function allRanked() {
+  const arr = loadRank();
+  return Array.isArray(arr) && arr.length === students.length;
+}
+function updateSubmitState() {
+  const state = loadState();
+  const allScored = students.every(s => {
+    const v = state[s];
+    return v && skills.every(sk => v[sk.id] != null);
+  });
+  submitBtn.disabled = !(allScored && allRanked());
+}
+
+// Initial populate
+(function init(){
+  // preload rank
+  buildRankList();
+  updateDoneCount();
+  updateSubtotal();
+  // preload select placeholder
+  // nothing else
+})();
+
+// Submit handler: packages JSON and shows it
+submitBtn.addEventListener('click', () => {
+  const state = loadState();
+  const rank = loadRank();
+  const submittedAt = new Date().toISOString();
+  const deviceId = getDeviceId();
+  const obj = {
+    event: "PBC_STEM_SPEAKER_SHOWCASE",
+    round: 1,
+    submittedAt,
+    deviceId,
+    scores: state,
+    rank: rank,
+    totals: Object.fromEntries(Object.entries(state).map(([k,v])=>[k, Object.values(v).reduce((a,b)=>a+(b||0),0)]))
+  };
+  payloadPre.textContent = JSON.stringify(obj, null, 2);
+  codeEl.textContent = deviceId.slice(-6).toUpperCase();
+  review.hidden = false;
+  window.scrollTo({ top: review.offsetTop, behavior: 'smooth' });
+});
+
+function getDeviceId() {
+  const key = 'pbc_device_id';
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now();
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+</script>
+</body>
+</html>
