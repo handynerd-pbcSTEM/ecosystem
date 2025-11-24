@@ -1,0 +1,169 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>STEMys Scoring</title>
+<style>
+  body{margin:0;font-family:system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;background:#020617;color:#e5e7eb}
+
+  /* Splash */
+  #splash{
+    background:#fff;color:#111;min-height:100vh;padding:40px 20px;
+    text-align:center;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+  }
+  #splash img.logo{max-width:260px;margin-bottom:24px}
+  #splash .tagline{font-size:18px;color:#444;font-style:italic;margin-bottom:20px}
+  #splash .sponsors img{height:55px;margin:0 12px;opacity:0.9}
+  #startBtn{
+    margin-top:32px;padding:14px 26px;border-radius:999px;border:none;
+    background:#222;color:#fff;font-size:16px;cursor:pointer;
+  }
+  #startBtn:hover{background:#000}
+
+  .app-section[hidden]{display:none}
+
+  header{
+    padding:12px 18px;background:#0b1729;position:sticky;top:0;color:#fff;
+  }
+
+  .card{
+    background:#0f172a;border:1px solid #334155;padding:16px;
+    margin:16px;border-radius:12px;
+  }
+
+  .student-select{
+    width:100%;padding:10px;border-radius:999px;background:#020617;
+    border:1px solid #334155;color:white;
+  }
+
+  .scale{
+    display:grid;grid-template-columns:repeat(5,1fr);gap:6px;
+  }
+  .scale input{display:none}
+  .pill{
+    padding:8px;border-radius:999px;border:1px solid #334155;text-align:center;
+  }
+  .scale input:checked + .pill{
+    background:#22d3ee;color:#000;font-weight:700;border:none;
+  }
+
+  .draglist{list-style:none;margin:0;padding:0}
+  .draglist li{
+    padding:10px;background:#1e293b;border:1px solid #334155;
+    border-radius:8px;margin-bottom:6px;display:flex;align-items:center;gap:8px;
+  }
+  .drag-handle{cursor:grab}
+  .cta{
+    width:100%;padding:12px;margin-top:10px;border-radius:999px;
+    background:#22d3ee;color:#000;font-weight:700;border:none;cursor:pointer;
+  }
+</style>
+</head>
+<body>
+
+<section id="splash">
+  <img src="stemys.png" class="logo" alt="STEMys Logo"/>
+  <h1 style="margin:0;font-size:30px;color:#111">The STEMys</h1>
+  <div class="tagline">“Where Student Voice Meets Innovation”</div>
+
+  <div class="sponsors" style="margin:20px 0 10px;">
+    <img src="pbcstem.png" alt="PBC STEM Ecosystem"/>
+    <img src="cox.png" alt="Cox Science Center and Aquarium"/>
+    <img src="stiles.png" alt="Stiles Nicholson Foundation"/>
+  </div>
+
+  <button id="startBtn">Start Scoring</button>
+</section>
+
+<header class="app-section" hidden>
+  <h2>STEMys Scoring</h2>
+</header>
+
+<section class="card app-section" id="who" hidden>
+  <h3>1) Select Speaker</h3>
+  <select id="studentSelect" class="student-select"><option value="">— Choose —</option></select>
+</section>
+
+<section class="card app-section" id="rubric" hidden>
+  <h3>2) Score Skills</h3>
+  <div id="skills"></div>
+</section>
+
+<section class="card app-section" id="rank" hidden>
+  <h3>3) Rank All Speakers</h3>
+  <ol class="draglist" id="rankList"></ol>
+  <button class="cta" id="submitBtn" disabled>Submit Ballot</button>
+</section>
+
+<section class="card app-section" id="review" hidden>
+  <h3>Submitted ✓</h3>
+  <pre id="payload"></pre>
+</section>
+
+<script>
+const splash = document.getElementById('splash');
+const appSections = document.querySelectorAll('.app-section');
+const startBtn = document.getElementById('startBtn');
+
+// Fix 1: hide splash, then after a short delay show app sections and force display:block
+startBtn.onclick = () => {
+  splash.style.display = "none";
+  setTimeout(() => {
+    appSections.forEach(s => {
+      s.hidden = false;
+      if (!s.style.display || s.style.display === "none") {
+        s.style.display = "block";
+      }
+    });
+  }, 50);
+};
+
+const students = [...Array(10)].map((_,i) => "Student " + (i+1));
+const sel = document.getElementById('studentSelect');
+students.forEach(s => {
+  const o = document.createElement("option");
+  o.value = s;
+  o.textContent = s;
+  sel.appendChild(o);
+});
+
+const skills = [
+  {id:"clarity",name:"Communication Clarity"},
+  {id:"accuracy",name:"STEM Accuracy"},
+  {id:"story",name:"Storytelling"},
+  {id:"insight",name:"Insight & Problem-Solving"},
+  {id:"presence",name:"Professional Presence"}
+];
+const skillsWrap = document.getElementById("skills");
+skills.forEach(sk => {
+  const box = document.createElement("div");
+  box.innerHTML =
+    '<label>'+sk.name+'</label>'+
+    '<div class="scale">'+
+    [1,2,3,4,5].map(v =>
+      '<label><input type="radio" name="'+sk.id+'" value="'+v+'">'+
+      '<span class="pill">'+v+'</span></label>'
+    ).join("")+
+    '</div>';
+  skillsWrap.appendChild(box);
+});
+
+const rankList = document.getElementById('rankList');
+students.forEach(s => {
+  let li = document.createElement("li");
+  li.draggable = true;
+  li.innerHTML = '<span class="drag-handle">☰</span> '+s;
+  rankList.appendChild(li);
+});
+
+document.getElementById("submitBtn").onclick = () => {
+  document.getElementById("review").hidden = false;
+  document.getElementById("payload").textContent = "Sample submission…";
+};
+</script>
+
+</body>
+</html>

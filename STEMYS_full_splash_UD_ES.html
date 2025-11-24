@@ -1,0 +1,278 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>STEMys Scoring</title>
+<style>
+  :root{
+    --bg-dark:#020617;
+    --ink:#e5e7eb;
+    --muted:#94a3b8;
+    --accent:#22d3ee;
+  }
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--bg-dark);
+    color:var(--ink);
+  }
+
+  /* Splash */
+  #splash{
+    background:#fff;color:#111;min-height:100vh;padding:40px 20px;
+    text-align:center;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+  }
+  #splash img.logo{max-width:260px;margin-bottom:24px}
+  #splash .tagline{font-size:18px;color:#444;font-style:italic;margin-bottom:20px}
+  #splash .sponsors img{height:55px;margin:0 12px;opacity:0.95}
+  #startBtn{
+    margin-top:32px;padding:14px 26px;border-radius:999px;border:none;
+    background:#222;color:#fff;font-size:16px;cursor:pointer;
+  }
+  #startBtn:focus-visible{
+    outline:3px solid #111;outline-offset:3px;
+  }
+  #startBtn:hover{background:#000}
+
+  .app-section[hidden]{display:none}
+
+  header{
+    padding:12px 18px;background:#0b1729;position:sticky;top:0;color:#fff;
+  }
+
+  header h2{margin:0;font-size:18px}
+
+  .card{
+    background:#0f172a;border:1px solid #334155;padding:16px;
+    margin:16px;border-radius:12px;
+  }
+
+  .student-select{
+    width:100%;padding:10px;border-radius:999px;background:#020617;
+    border:1px solid #334155;color:white;
+  }
+  .student-select:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+  }
+
+  .helper{
+    font-size:12px;
+    color:var(--muted);
+    margin-top:4px;
+  }
+
+  .rubric-item{
+    margin-bottom:20px;
+  }
+  .skill-label{
+    display:block;
+    font-weight:600;
+    font-size:14px;
+    margin-bottom:6px;
+  }
+  .skill-es{
+    display:block;
+    font-weight:500;
+    font-size:13px;
+    color:var(--muted);
+  }
+
+  .scale{
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:6px;
+    margin-top:4px;
+  }
+  .scale input{display:none}
+  .scale-option{display:block}
+  .pill{
+    width:100%;
+    padding:10px 6px;
+    border-radius:999px;
+    border:1px solid #334155;
+    text-align:center;
+    font-size:14px;
+  }
+  .pill-number{
+    font-weight:600;
+  }
+  .scale input:checked + .pill{
+    background:var(--accent);
+    color:#000;
+    font-weight:700;
+    border:none;
+  }
+  .scale input:focus-visible + .pill{
+    outline:2px solid #fbbf24;
+    outline-offset:2px;
+  }
+
+  @media (max-width:480px){
+    .pill{padding:8px 4px;font-size:13px}
+  }
+
+  .draglist{list-style:none;margin:0;padding:0}
+  .draglist li{
+    padding:10px;background:#1e293b;border:1px solid #334155;
+    border-radius:8px;margin-bottom:6px;display:flex;align-items:center;gap:8px;
+  }
+  .drag-handle{cursor:grab}
+  .cta{
+    width:100%;padding:12px;margin-top:10px;border-radius:999px;
+    background:var(--accent);color:#000;font-weight:700;border:none;cursor:pointer;
+  }
+  .cta:focus-visible{
+    outline:2px solid #facc15;
+    outline-offset:2px;
+  }
+</style>
+</head>
+<body>
+
+<section id="splash" aria-labelledby="splashTitle">
+  <img src="stemys.png" class="logo" alt="STEMys Logo"/>
+  <h1 id="splashTitle" style="margin:0;font-size:30px;color:#111">The STEMys</h1>
+  <div class="tagline">“Where Student Voice Meets Innovation”</div>
+
+  <p class="helper" style="max-width:420px;margin:4px auto 16px;color:#555;">
+    Bilingual experience · Experiencia bilingüe (English / Español)
+  </p>
+
+  <div class="sponsors" style="margin:20px 0 10px;">
+    <img src="pbcstem.png" alt="PBC STEM Ecosystem"/>
+    <img src="cox.png" alt="Cox Science Center and Aquarium"/>
+    <img src="stiles.png" alt="Stiles Nicholson Foundation"/>
+  </div>
+
+  <button id="startBtn">Start Scoring · Comenzar a calificar</button>
+</section>
+
+<header class="app-section" hidden>
+  <h2>STEMys Scoring · Evaluación STEMys</h2>
+</header>
+
+<section class="card app-section" id="who" hidden>
+  <h3>1) Select Speaker · Seleccione al orador</h3>
+  <p class="helper">
+    Choose the student currently presenting. Elija el estudiante que está presentando ahora.
+  </p>
+  <label for="studentSelect" class="helper" style="font-size:13px;color:var(--ink);margin-bottom:6px;">
+    Student name · Nombre del estudiante
+  </label>
+  <select id="studentSelect" class="student-select">
+    <option value="">— Choose / Elija —</option>
+  </select>
+</section>
+
+<section class="card app-section" id="rubric" hidden>
+  <h3>2) Score the skills · Califique las habilidades</h3>
+  <p class="helper">
+    Tap or click 1–5 for each skill. 1 = Needs development / Necesita desarrollo, 
+    3 = Proficient / Competente, 5 = Exceptional / Excepcional.
+  </p>
+  <div id="skills"></div>
+</section>
+
+<section class="card app-section" id="rank" hidden>
+  <h3>3) Rank all speakers · Ordene a todos los oradores</h3>
+  <p class="helper">
+    Drag names to order your top 10, from #1 (strongest) to #10. 
+    Arrastre los nombres para ordenar del #1 (más fuerte) al #10.
+  </p>
+  <ol class="draglist" id="rankList"></ol>
+  <button class="cta" id="submitBtn" disabled>
+    Submit ballot · Enviar boleta
+  </button>
+</section>
+
+<section class="card app-section" id="review" hidden>
+  <h3>Submitted ✓ · Enviado ✓</h3>
+  <p class="helper">
+    Thank you for supporting STEM student voice. Gracias por apoyar la voz de los estudiantes de STEM.
+  </p>
+  <pre id="payload" aria-label="Sample submission payload"></pre>
+</section>
+
+<script>
+const splash = document.getElementById('splash');
+const appSections = document.querySelectorAll('.app-section');
+const startBtn = document.getElementById('startBtn');
+
+// Fix 1: hide splash, then after a short delay show app sections and force display:block
+startBtn.onclick = () => {
+  splash.style.display = "none";
+  setTimeout(() => {
+    appSections.forEach(s => {
+      s.hidden = false;
+      if (!s.style.display || s.style.display === "none") {
+        s.style.display = "block";
+      }
+    });
+  }, 50);
+};
+
+// Students placeholder (update with real names as needed)
+const students = Array.from({length:10}, (_,i) => "Student " + (i+1));
+const sel = document.getElementById('studentSelect');
+students.forEach(s => {
+  const o = document.createElement("option");
+  o.value = s;
+  o.textContent = s;
+  sel.appendChild(o);
+});
+
+// Bilingual skills
+const skills = [
+  {id:"clarity", en:"Communication Clarity", es:"Claridad de comunicación"},
+  {id:"accuracy", en:"STEM Accuracy & Rigor", es:"Exactitud y rigor en STEM"},
+  {id:"story", en:"Storytelling & Engagement", es:"Relato e interacción con el público"},
+  {id:"insight", en:"Insight & Problem-Solving", es:"Perspectiva y resolución de problemas"},
+  {id:"presence", en:"Professional Presence", es:"Presencia profesional"}
+];
+
+const skillsWrap = document.getElementById("skills");
+skills.forEach(sk => {
+  const box = document.createElement("div");
+  box.className = "rubric-item";
+  box.innerHTML =
+    '<label class="skill-label">'+sk.en+
+      '<span class="skill-es">'+sk.es+'</span>'+
+    '</label>'+
+    '<div class="scale" role="radiogroup" aria-label="'+sk.en+' / '+sk.es+'">'+
+      [1,2,3,4,5].map(v =>
+        '<label class="scale-option">'+
+          '<input type="radio" name="'+sk.id+'" value="'+v+'" '+
+                 'aria-label="'+v+' - '+
+                 (v===1 ? 'Needs development / Necesita desarrollo' :
+                  v===3 ? 'Proficient / Competente' :
+                  v===5 ? 'Exceptional / Excepcional' : 'Neutral / Neutral')+'">'+
+          '<span class="pill"><span class="pill-number">'+v+'</span></span>'+
+        '</label>'
+      ).join("")+
+    '</div>'+
+    '<div class="helper">1 = Needs development / Necesita desarrollo · 3 = Proficient / Competente · 5 = Exceptional / Excepcional</div>';
+  skillsWrap.appendChild(box);
+});
+
+// Simple rank list (drag visuals only; no persistence logic here)
+const rankList = document.getElementById('rankList');
+students.forEach(s => {
+  let li = document.createElement("li");
+  li.draggable = true;
+  li.innerHTML = '<span class="drag-handle" aria-hidden="true">☰</span> '+s;
+  rankList.appendChild(li);
+});
+
+// Placeholder submit handler
+document.getElementById("submitBtn").onclick = () => {
+  document.getElementById("review").hidden = false;
+  document.getElementById("payload").textContent = "Sample submission… / Ejemplo de envío…";
+};
+</script>
+
+</body>
+</html>
